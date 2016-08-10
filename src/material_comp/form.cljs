@@ -1,6 +1,8 @@
 (ns material-comp.form
   (:require [cljs.spec :as s]
             [cljs-react-material-ui.core :as ui]
+            [clojure.string :as str]
+            [material-comp.format :as format]
             [material-comp.util :as u]
             [om.next :as om :refer-macros [defui]]))
 
@@ -10,7 +12,7 @@
     {:raw-value ""})
   (render [this]
     (let [{:keys [spec error-formatter on-change]
-           :or {error-formatter (comp pr-str :pred)}
+           :or {error-formatter format/error-formatter}
            :as props} (om/props this)
           {:keys [raw-value value]} (om/get-state this)]
       (ui/text-field
@@ -27,9 +29,10 @@
               :value raw-value)
             (cond->
               (= ::s/invalid value)
-              (assoc :error-text (-> (s/explain-data spec raw-value)
-                                     (get-in [::s/problems []])
-                                     (error-formatter)))))))))
+              (assoc :error-text (->> (s/explain-data spec raw-value)
+                                      ::s/problems
+                                      (map (partial apply error-formatter))
+                                      (str/join " ")))))))))
 
 (def validating-text-field
   "A validating text field wraps a normal text field.
@@ -41,7 +44,7 @@
   Additional props:
 
   :spec            - a spec to which values must conform
-  :error-formatter - a function from problem to error string
+  :error-formatter - a function from path and problem to error string (optional)
 
   Changed props:
 
@@ -49,5 +52,8 @@
                changes. Gets the conforming value or ::s/invalid instead of the
                event.
 
-  A problem is a map of :pred and :val from s/explain-data."
+  A problem is a map of :pred and :val from s/explain-data.
+
+  If no error formatter is specified the default error formatter from
+  material-comp.format is used."
   (om/factory ValidatingTextField))
