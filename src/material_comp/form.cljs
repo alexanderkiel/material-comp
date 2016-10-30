@@ -11,7 +11,7 @@
   (initLocalState [_]
     {:raw-value ""})
   (render [this]
-    (let [{:keys [spec error-formatter on-change]
+    (let [{:keys [id spec error-formatter on-change]
            :or {error-formatter format/error-formatter}
            :as props} (om/props this)
           {:keys [raw-value value]} (om/get-state this)]
@@ -21,17 +21,16 @@
             (assoc
               :on-change
               (fn [e]
-                (let [target-value (u/target-value e)
-                      conformed-value (s/conform spec target-value)]
-                  (om/update-state! this assoc :value conformed-value
-                                    :raw-value target-value)
-                  (when on-change (on-change conformed-value))))
+                (let [tval (u/target-value e)
+                      cval (s/conform spec tval)]
+                  (om/update-state! this assoc :value cval :raw-value tval)
+                  (when on-change (on-change cval))))
               :value raw-value)
             (cond->
               (= ::s/invalid value)
               (assoc :error-text (->> (s/explain-data spec raw-value)
                                       ::s/problems
-                                      (map (partial apply error-formatter))
+                                      (map (partial error-formatter id))
                                       (str/join " ")))))))))
 
 (def validating-text-field
@@ -44,7 +43,7 @@
   Additional props:
 
   :spec            - a spec to which values must conform
-  :error-formatter - a function from path and problem to error string (optional)
+  :error-formatter - a function from id and problem to error string (optional)
 
   Changed props:
 

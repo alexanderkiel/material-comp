@@ -10,34 +10,38 @@
     (seq? pred) (filter some? (map normalize pred))
     (symbol? pred) pred))
 
-(defn- dispatch [_ {:keys [pred via]}]
-  (cond-> (normalize pred)
-          (seq via) (vector via)))
+(defn- dispatch [id {:keys [pred via]}]
+  (cond-> [(normalize pred)]
+          id (conj id)
+          (and id (seq via)) (conj via)))
 
 (defmulti error-formatter
-  "Dispatches on normalized pred and optional via of problem.
+  "Dispatches on normalized pred and optional id and via of problem.
 
-  When via is empty dispatches on normalized pred. Otherwise first dispatches
-  on the vector of normalized pred and via and than falls back to normalized
-  pred only."
-  {:arglists '([path problem])}
+  Dispatches in this order:
+
+  * [normalized-pred id via]
+  * [normalized-pred id]
+  * [normalized-pred]"
+  {:arglists '([id problem])}
   dispatch)
 
 (defmethod error-formatter :default
-  [path problem]
-  (let [dispatch-val (dispatch path problem)]
-    (if (vector? dispatch-val)
-      (error-formatter path (dissoc problem :via))
+  [id problem]
+  (let [dispatch-val (dispatch id problem)]
+    (case (count dispatch-val)
+      3 (error-formatter id (dissoc problem :via))
+      2 (error-formatter nil problem)
       (pr-str (:pred problem)))))
 
 ;; ---- Error Formatter Impl --------------------------------------------------
 
-(defmethod error-formatter '(<= (count %))
+(defmethod error-formatter '[(<= (count %))]
   [_ {:keys [pred val]}]
   (let [max-length (last pred)]
     (gstr/format "Maximale Länge von %s Zeichen um %s Zeichen überschritten"
                  max-length (- (count val) max-length))))
 
-(defmethod error-formatter '(not (blank? %))
+(defmethod error-formatter '[(not (blank? %))]
   [_ _]
   "Wert erforderlich")
