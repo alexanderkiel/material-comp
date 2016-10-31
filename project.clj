@@ -3,6 +3,7 @@
   :url "http://git.life.uni-leipzig.local/clojure/material-comp"
 
   :min-lein-version "2.0.0"
+  :pedantic? :abort
 
   :dependencies [[cljs-react-material-ui "0.2.27"]
                  [org.omcljs/om "1.0.0-alpha46" :exclusions [cljsjs/react]]]
