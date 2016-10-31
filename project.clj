@@ -21,4 +21,6 @@
      :compiler
      {:output-to "out/testable.js"
       :main material-comp.runner
-      :optimizations :simple}}}})
+      :optimizations :simple}}}}
+
+  :clean-targets ["target" "out"])
