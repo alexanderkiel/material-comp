@@ -1,4 +1,5 @@
 (ns material-comp.form
+  "Form elements like validating text fields."
   (:require [cljs.spec :as s]
             [cljs-react-material-ui.core :as ui]
             [clojure.string :as str]

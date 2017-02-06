@@ -1,17 +1,20 @@
 (ns material-comp.format
+  "Error formatters for validating text field."
   (:require [goog.string :as gstr]))
 
 ;; ---- Error Formatter -------------------------------------------------------
 
-(defn- normalize
-  "Retains symbols in pred."
+(defn- normalize-pred
+  "Retains symbols in pred. Strips things like numbers.
+
+  Example: (<= (count %) 10) gets (<= (count %))"
   [pred]
   (cond
-    (seq? pred) (filter some? (map normalize pred))
+    (seq? pred) (filter some? (map normalize-pred pred))
     (symbol? pred) pred))
 
 (defn- dispatch [id {:keys [pred via]}]
-  (cond-> [(normalize pred)]
+  (cond-> [(normalize-pred pred)]
           id (conj id)
           (and id (seq via)) (conj via)))
 
@@ -26,6 +29,8 @@
   {:arglists '([id problem])}
   dispatch)
 
+;; Realizes the dispatch hierarchy by removing information and calling
+;; error formatter again.
 (defmethod error-formatter :default
   [id problem]
   (let [dispatch-val (dispatch id problem)]
@@ -34,14 +39,14 @@
       2 (error-formatter nil problem)
       (pr-str (:pred problem)))))
 
-;; ---- Error Formatter Impl --------------------------------------------------
+;; ---- Default Error Formatter Implementations -------------------------------
+
+(defmethod error-formatter '[(not (blank? %))]
+  [_ _]
+  "Wert erforderlich")
 
 (defmethod error-formatter '[(<= (count %))]
   [_ {:keys [pred val]}]
   (let [max-length (last pred)]
     (gstr/format "Maximale Länge von %s Zeichen um %s Zeichen überschritten"
                  max-length (- (count val) max-length))))
-
-(defmethod error-formatter '[(not (blank? %))]
-  [_ _]
-  "Wert erforderlich")
